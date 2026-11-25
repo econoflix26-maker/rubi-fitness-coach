@@ -843,7 +843,7 @@ function generateWod(){
  const modeLabel=mode==="hyrox"?"HYROX":mode==="hybrid"?"HYBRID":"CROSSFIT";
  const structure=f==="EMOM"?"Formato EMOM: comienza cada tarea al inicio de su minuto y descansa el tiempo sobrante.":f==="AMRAP"?"AMRAP: acumula rondas y repeticiones con ritmo sostenible.":f==="FOR TIME"||f==="CHIPPER"?"For Time: completa el trabajo en orden, manteniendo técnica y pacing.":f==="INTERVALS"?"Intervalos: alterna trabajo y recuperación.":"Bloque de fuerza seguido de acondicionamiento.";
  const scaled=lv==="beginner"?"Reduce volumen 30–50%, usa cargas ligeras y sustituye movimientos técnicos por variantes simples.":lv==="advanced"?"Si la técnica es sólida, aumenta moderadamente carga o intensidad; no ambas a la vez.":"Escala carga, distancia o reps para mantener técnica y ritmo.";
- document.getElementById("wodResult").innerHTML='<div class="wod-box"><span class="eyebrow">'+modeLabel+' · WORKOUT RANDOMIZER</span><h3>'+safe(selected.name)+'</h3><div class="wod-meta"><span class="wod-chip">'+safe(f)+'</span><span class="wod-chip">'+t+' min objetivo</span><span class="wod-chip">'+safe(lv)+'</span><span class="wod-chip">'+safe(modalitySets[gear].join(" + "))+'</span></div><p>'+structure+'</p><ul>'+selected.items.map(x=>'<li>'+safe(x)+'</li>').join("")+'</ul><p><b>Adaptación:</b> '+safe(scaled)+'</p><p class="tiny-note muted">Workout de plantilla original/estructural. Ajusta pesos, reps y tiempos a tu nivel, equipo y objetivo.</p><div class="wod-clockbox"><span class="eyebrow">WOD INTERVAL TIMER</span><div class="wod-clock" id="wodClock">00:00</div><div id="wodClockLabel" class="muted tiny-note">Timer adaptado al formato elegido</div><div class="run-timer-buttons"><button type="button" class="primary" id="wodTimerStart">▶ Start</button><button type="button" class="st-toolbtn" id="wodTimerPause">Ⅱ Pause</button><button type="button" class="st-toolbtn" id="wodTimerReset">↻ Reset</button></div></div><button class="st-toolbtn" id="wodAgain">↻ Generar otro</button></div>';
+ document.getElementById("wodResult").innerHTML='<div class="wod-box"><span class="eyebrow">'+modeLabel+' · WORKOUT RANDOMIZER</span><h3>'+safe(selected.name)+'</h3><div class="wod-meta"><span class="wod-chip">'+safe(f)+'</span><span class="wod-chip">'+t+' min objetivo</span><span class="wod-chip">'+safe(lv)+'</span><span class="wod-chip">'+safe(modalitySets[gear].join(" + "))+'</span></div><p>'+structure+'</p><ul>'+selected.items.map(x=>'<li>'+safe(x)+'</li>').join("")+'</ul><p><b>Adaptación:</b> '+safe(scaled)+'</p><p class="tiny-note muted">Workout de plantilla original/estructural. Ajusta pesos, reps y tiempos a tu nivel, equipo y objetivo.</p><button class="st-toolbtn" id="wodAgain">↻ Generar otro</button></div>';
  document.getElementById("wodAgain")?.addEventListener("click",generateWod);
 }document.getElementById("wodGenerate")?.addEventListener("click",generateWod);
 })();
@@ -903,30 +903,6 @@ $("runTimerStart").addEventListener("click",start);$("runTimerPause").addEventLi
 $("runType").addEventListener("change",applyPreset);
 try{const saved=JSON.parse(localStorage.getItem("rubiRunningDraft")||"null");if(saved){if(saved.type&&presets[saved.type])$("runType").value=saved.type;if(saved.goal)$("runGoal").value=saved.goal;$("runWarm").value=saved.warm??10;$("runCool").value=saved.cool??8;if(saved.blocks?.length)blocks=saved.blocks}}catch(e){}
 if(!blocks.length)blocks=presets[$("runType").value].map(x=>({label:x.label,work:x.work,rest:x.rest??0,reps:x.reps??1}));renderBlocks();
-})();
-</script><script>
-(function(){
-let wodTimer=null,wodSeconds=0,wodElapsed=0,wodPaused=true,wodModeTimer="countdown",wodIntervalSec=60,wodTotal=15,wodPhase="work",wodRoot=null;
-const $w=id=>document.getElementById(id);
-const wodScoped=id=>(wodRoot?.querySelector("#"+id)||$w(id));
-function wodFmt(s){s=Math.max(0,Math.floor(s));return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
-function wodDraw(){
- const clock=wodScoped("wodClock"),label=wodScoped("wodClockLabel");if(!clock||!label)return;
- clock.textContent=wodFmt(wodSeconds);
- if(wodModeTimer==="interval"){const pos=wodElapsed%(wodIntervalSec+20);wodPhase=pos<wodIntervalSec?"WORK":"REST";label.textContent="INTERVAL "+Math.floor(wodElapsed/(wodIntervalSec+20)+1)+" · "+wodPhase+" · "+wodTotal+" min"}
- else if(wodModeTimer==="emom")label.textContent="EMOM · MINUTO "+(Math.floor(wodElapsed/60)+1)+" · "+wodTotal+" min";
- else label.textContent=wodModeTimer==="countup"?"FOR TIME · CRONÓMETRO":"AMRAP · CUENTA ATRÁS";
-}
-function wodInit(){clearInterval(wodTimer);wodTimer=null;wodElapsed=0;wodPaused=true;wodTotal=Math.max(1,+($w("wodTime")?.value||15));const fmt=($w("wodFormat")?.value||"AMRAP").toUpperCase();wodModeTimer=fmt==="FOR TIME"||fmt==="CHIPPER"||fmt==="STRENGTH + METCON"?"countup":fmt==="EMOM"?"emom":fmt==="INTERVALS"?"interval":"countdown";wodIntervalSec=40;wodSeconds=wodModeTimer==="countup"?0:wodTotal*60;wodDraw()}
-function wodTick(){wodElapsed++;if(wodModeTimer==="countup")wodSeconds++;else wodSeconds--;if(wodSeconds<=0){wodSeconds=0;clearInterval(wodTimer);wodTimer=null;wodPaused=true}wodDraw()}
-document.addEventListener("click",e=>{
- if(e.target.closest("#wodAgain")){wodInit();return}
- if(e.target.closest("#wodTimerStart")){wodRoot=e.target.closest(".wod-box")||document; if(!wodTimer){if(wodSeconds===0&&wodModeTimer!=="countup")wodInit();wodPaused=false;wodTimer=setInterval(wodTick,1000)}return}
- if(e.target.closest("#wodTimerPause")){clearInterval(wodTimer);wodTimer=null;wodPaused=true;return}
- if(e.target.closest("#wodTimerReset")){wodRoot=e.target.closest(".wod-box")||document;wodInit();return}
-});
-const originalWod=$w("wodGenerate");originalWod?.addEventListener("click",()=>{setTimeout(wodInit,20)});
-wodInit();
 })();
 </script><script>
 (function(){
