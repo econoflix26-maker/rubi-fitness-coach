@@ -971,8 +971,8 @@ wodInit();
  }
  function startTimer(){if(active)return;if(paused){active=true;paused=false;tone(750,100);timer=setInterval(tick,1000);return;}const m=mode.value;currentMode=m;round=1;elapsed=0;phaseType='work';if(m==='fortime'||m==='chipper'){active=true;clock.textContent='00:00';announce(m==='fortime'?'FOR TIME · GO':'CHIPPER · GO');roundText.textContent='Cronómetro ascendente · detener al terminar';timer=setInterval(tick,1000);return;}if(m==='amrap'){remaining=Math.max(1,Number(dur.value)||12)*60;active=true;announce('AMRAP · GO');roundText.textContent='Tiempo total · '+dur.value+' min';timer=setInterval(tick,1000);return;}if(m==='emom'){remaining=Math.max(1,Number(rounds.value)||1)*60;active=true;round=1;announce('ROUND 1 · GO');roundText.textContent='Round 1 de '+rounds.value+' · 60 s';timer=setInterval(tick,1000);return;}remaining=Math.max(1,Number(work.value)||1);active=true;announce('WORK');roundText.textContent='Round 1 de '+rounds.value+' · trabajo';timer=setInterval(tick,1000);}
  start.addEventListener('click',startTimer);
- pause.addEventListener('click',()=>{if(active){clearInterval(timer);timer=null;active=false;paused=true;phase.textContent='PAUSADO';tone(420,100)}else if(paused)startTimer()});
- reset.addEventListener('click',displaySetup);
+ pause.addEventListener('click',()=>{if(active){clearInterval(timer);timer=null;active=false;paused=true;phase.textContent='PAUSADO';pause.textContent='▶ Reanudar';tone(420,100)}else if(paused){pause.textContent='Ⅱ Pausar';startTimer()}});
+ reset.addEventListener('click',()=>{pause.textContent='Ⅱ Pausar';displaySetup()});
  soundBtn.addEventListener('click',()=>{beeps=!beeps;soundBtn.textContent=beeps?'♫ Sonido activado':'♫ Sonido desactivado';if(beeps)tone(750,100)});
  [mode,rounds,work,rest,dur].forEach(el=>el.addEventListener('change',displaySetup));
  displaySetup();
