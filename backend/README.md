@@ -21,6 +21,15 @@ This folder is the backend groundwork for v1.0. It does not replace the producti
 ## Bootstrap SQL
 `schema-bootstrap.sql` is the initial schema/policy bundle. It has been applied to the dedicated RUBÍ project. A verification query confirmed all six tables exist with RLS enabled.
 
+## Auth implementation status
+- Auth UI now uses Supabase Auth instead of localStorage-based email/password simulation.
+- Sign-up and sign-in flows integrated; profile metadata/profile row sync included.
+- Password visibility toggle added.
+- Password recovery email flow and recovery-session password update form added.
+- Session restore and sign-out use Supabase Auth.
+- Preview deployment created and READY: https://rubi-fitness-coach-git-v10-backend-foundation-rubenrubi93.vercel.app
+- Browser-based QA and two-user RLS isolation test are still pending; preview is not promoted to production.
+
 ## Auth implementation acceptance checklist
 1. Use the Supabase JS client pinned to a known version (or import map with pinned URL).
 2. Keep only the publishable/anon client key in browser code. Never put the service-role key in HTML or public environment variables.
