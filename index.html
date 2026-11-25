@@ -463,7 +463,6 @@ function go(id){const homeBtn=document.getElementById('homeReturn');if(homeBtn)h
 document.querySelectorAll('.nav button').forEach(x=>x.addEventListener('click',()=>go(x.dataset.page)));
 function toast(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
 
-let authMode='login';
 // RUBÍ Fitness Coach 1.0 — Supabase Auth foundation
 const SUPABASE_URL="https://hsqdwhbemxcrtfkspmrw.supabase.co";
 const SUPABASE_PUBLIC_KEY="sb_publishable_jgLQMQlLmzSYy9q48t_v2g_FLqUiUnV";
