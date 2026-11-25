@@ -2,13 +2,24 @@
 
 This folder is the backend groundwork for v1.0. It does not replace the production v0.7 artifact.
 
+## Supabase project provisioned
+- Project name: `rubi-fitness-coach`
+- Project ref: `hsqdwhbemxcrtfkspmrw`
+- Organization: econoflix26-maker's Org
+- Region: `eu-central-1` (Frankfurt)
+- Project status: `ACTIVE_HEALTHY`
+- API URL: `https://hsqdwhbemxcrtfkspmrw.supabase.co`
+
 ## Scope
-- Supabase Auth: email/password sign-up, sign-in, sign-out, password recovery, session persistence.
+- Supabase Auth: email/password sign-up, sign-in, sign-out, password recovery, session persistence (frontend implementation still pending).
 - User-owned data: profiles, workout templates, workout sessions, running activities, weekly planner entries and progress metrics.
-- Row Level Security (RLS) on every public table. Every owner policy uses `auth.uid()`; no client-side service-role key.
+- Row Level Security (RLS) enabled on all six public tables. Every owner policy uses `auth.uid()`; no client-side service-role key.
+- Vercel environment variables configured for Production, Preview and Development:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY` (publishable key)
 
 ## Bootstrap SQL
-`schema-bootstrap.sql` is the reviewed initial schema/policy bundle. Apply it only to a dedicated RUBÍ Supabase project after the project has been created and confirmed healthy. It is designed for a clean project and can be reapplied for policies/triggers; table creation is guarded.
+`schema-bootstrap.sql` is the initial schema/policy bundle. It has been applied to the dedicated RUBÍ project. A verification query confirmed all six tables exist with RLS enabled.
 
 ## Auth implementation acceptance checklist
 1. Use the Supabase JS client pinned to a known version (or import map with pinned URL).
