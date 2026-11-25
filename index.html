@@ -464,75 +464,102 @@ document.querySelectorAll('.nav button').forEach(x=>x.addEventListener('click',(
 function toast(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
 
 let authMode='login';
+// RUBÍ Fitness Coach 1.0 — Supabase Auth foundation
+const SUPABASE_URL="https://hsqdwhbemxcrtfkspmrw.supabase.co";
+const SUPABASE_PUBLIC_KEY="sb_publishable_jgLQMQlLmzSYy9q48t_v2g_FLqUiUnV";
+let rubiSupabase=null, authMode="login";
+function loadSupabaseSdk(){
+ return new Promise((resolve,reject)=>{
+  if(window.supabase?.createClient){resolve(window.supabase);return}
+  const sources=["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2","https://unpkg.com/@supabase/supabase-js@2"];
+  let n=0;
+  const tryNext=()=>{if(n>=sources.length){reject(new Error("No se pudo cargar el servicio de autenticación. Comprueba tu conexión."));return}
+   const s=document.createElement("script");s.src=sources[n++];s.onload=()=>window.supabase?.createClient?resolve(window.supabase):tryNext();s.onerror=()=>tryNext();document.head.appendChild(s);
+  };tryNext();
+ });
+}
+async function getRubiClient(){if(rubiSupabase)return rubiSupabase;const sdk=await loadSupabaseSdk();rubiSupabase=sdk.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return rubiSupabase}
 function setAuthMode(mode){
-  authMode=mode;const reg=mode==='register';
-  document.getElementById('loginTab').classList.toggle('active',!reg);
-  document.getElementById('registerTab').classList.toggle('active',reg);
-  document.getElementById('nameLabel').style.display=reg?'block':'none';
-  document.getElementById('authName').required=reg;
-  document.getElementById('authTitle').textContent=reg?'Crea tu cuenta ✨':'¡Qué bueno verte! 👋';
-  document.getElementById('authSubtitle').textContent=reg?'Empieza hoy a construir tu mejor versión.':'Entra en tu espacio de entrenamiento.';
-  document.getElementById('authSubmit').textContent=reg?'Crear mi cuenta →':'Entrar a mi espacio →';
-  document.getElementById('authSwitch').innerHTML=reg?`¿Ya tienes cuenta? <button type="button" onclick="setAuthMode('login')">Inicia sesión</button>`:`¿Aún no tienes cuenta? <button type="button" onclick="setAuthMode('register')">Regístrate gratis</button>`;
-  document.getElementById('authError').textContent='';
+ authMode=mode;const reg=mode==="register",reset=mode==="reset";
+ document.getElementById("loginTab").classList.toggle("active",!reg&&!reset);
+ document.getElementById("registerTab").classList.toggle("active",reg);
+ document.getElementById("nameLabel").style.display=reg?"block":"none";
+ document.getElementById("authName").required=reg;
+ document.getElementById("authName").value="";
+ document.getElementById("authTitle").textContent=reg?"Crea tu cuenta ✨":reset?"Nueva contraseña":"¡Qué bueno verte! 👋";
+ document.getElementById("authSubtitle").textContent=reg?"Empieza hoy a construir tu mejor versión.":reset?"Define tu nueva contraseña.":"Entra en tu espacio de entrenamiento.";
+ document.getElementById("authSubmit").textContent=reg?"Crear mi cuenta →":reset?"Actualizar contraseña →":"Entrar a mi espacio →";
+ document.getElementById("authSwitch").style.display=reset?"none":"";
+ document.getElementById("forgotPassword").style.display=reset?"none":"";
+ document.getElementById("authSwitch").innerHTML=reg?`¿Ya tienes cuenta? <button type="button" onclick="setAuthMode('login')">Inicia sesión</button>`: `¿Aún no tienes cuenta? <button type="button" onclick="setAuthMode('register')">Regístrate gratis</button>`;
+ document.getElementById("authError").textContent="";
+ document.getElementById("authPassword").placeholder=reset?"Nueva contraseña (mínimo 6 caracteres)":"Mínimo 6 caracteres";
 }
 function showApp(user){
-  document.getElementById('authScreen').classList.remove('show');
-  document.getElementById('userFirstName').textContent=user.name.split(/\\s+/)[0];
-  document.getElementById('userAvatar').textContent=user.name.split(/\\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('subtitle').textContent='Qué alegría verte. ¿Vamos a por tu mejor versión? 💪';
+ document.getElementById("authScreen").classList.remove("show");
+ const name=user.name||user.email||"Atleta";
+ document.getElementById("userFirstName").textContent=name.split(/\s+/)[0];
+ document.getElementById("userAvatar").textContent=name.split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();
+ document.getElementById("subtitle").textContent="Qué alegría verte. ¿Vamos a por tu mejor versión? 💪";
 }
-function signOut(){
-  const u=JSON.parse(localStorage.getItem('rubiSession')||'null');
-  localStorage.removeItem('rubiSession');
-  document.getElementById('authScreen').classList.add('show');
-  setAuthMode('login');
-  toast('¡Hasta pronto'+(u&&u.name?' '+u.name.split(/\\s+/)[0]:'')+'! 👋 Nos vemos en tu próximo entreno 💪');
+async function signOut(){
+ try{const sb=await getRubiClient();await sb.auth.signOut()}catch(err){console.warn("Supabase signOut:",err)}
+ localStorage.removeItem("rubiSession");
+ document.getElementById("authScreen").classList.add("show");setAuthMode("login");
+ toast("Sesión cerrada");
 }
-document.getElementById('togglePassword')?.addEventListener('click',()=>{
- const inp=document.getElementById('authPassword'),btn=document.getElementById('togglePassword');
- const reveal=inp.type==='password';inp.type=reveal?'text':'password';btn.textContent=reveal?'◎':'◉';btn.setAttribute('aria-label',reveal?'Ocultar contraseña':'Mostrar contraseña');btn.title=reveal?'Ocultar contraseña':'Mostrar contraseña';
+document.getElementById("togglePassword")?.addEventListener("click",()=>{
+ const inp=document.getElementById("authPassword"),btn=document.getElementById("togglePassword");
+ const reveal=inp.type==="password";inp.type=reveal?"text":"password";btn.textContent=reveal?"◎":"◉";btn.setAttribute("aria-label",reveal?"Ocultar contraseña":"Mostrar contraseña");btn.title=reveal?"Ocultar contraseña":"Mostrar contraseña";
 });
-document.getElementById('forgotPassword')?.addEventListener('click',()=>{
- const email=document.getElementById('authEmail').value.trim().toLowerCase();
- if(!email){document.getElementById('authError').textContent='Introduce primero tu email para recuperar el acceso.';document.getElementById('authEmail').focus();return;}
- const users=JSON.parse(localStorage.getItem('rubiUsers')||'{}');
- if(!users[email]){document.getElementById('authError').textContent='No hay cuenta local registrada con ese email.';return;}
- const next=prompt('RECUPERACIÓN LOCAL (demo)\n\nEsta app guarda las cuentas en este dispositivo y no tiene servidor de recuperación. Para restablecer tu contraseña local, introduce una nueva (mínimo 6 caracteres).');
- if(next===null)return;
- if(next.length<6){document.getElementById('authError').textContent='La nueva contraseña debe tener al menos 6 caracteres.';return;}
- users[email].password=next;localStorage.setItem('rubiUsers',JSON.stringify(users));document.getElementById('authError').textContent='Contraseña local actualizada. Ya puedes iniciar sesión.';
+document.getElementById("forgotPassword")?.addEventListener("click",async()=>{
+ const email=document.getElementById("authEmail").value.trim().toLowerCase(),error=document.getElementById("authError");
+ if(!email){error.textContent="Introduce primero tu email para recuperar el acceso.";document.getElementById("authEmail").focus();return}
+ error.textContent="Enviando enlace de recuperación…";
+ try{const sb=await getRubiClient();const {error:err}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});if(err)throw err;error.textContent="Si la cuenta existe, recibirás un email con el enlace para restablecer tu contraseña."}
+ catch(err){error.textContent=err.message||"No se pudo enviar el email. Inténtalo de nuevo."}
 });
-document.getElementById('contactButton')?.addEventListener('click',()=>{
- const email=document.getElementById('authEmail').value.trim();
- const subject=encodeURIComponent('Contacto · RUBÍ Fitness Coach');
- const body=encodeURIComponent('Hola,\n\nQuería contactar con el equipo de RUBÍ Fitness Coach.\n\nEmail de mi cuenta: '+email+'\n\n');
- window.location.href='mailto:?subject='+subject+'&body='+body;
+document.getElementById("contactButton")?.addEventListener("click",()=>{
+ const email=document.getElementById("authEmail").value.trim(),subject=encodeURIComponent("Contacto · RUBÍ Fitness Coach"),body=encodeURIComponent("Hola,\n\nQuería contactar con el equipo de RUBÍ Fitness Coach.\n\nEmail de mi cuenta: "+email+"\n\n");
+ window.location.href="mailto:?subject="+subject+"&body="+body;
 });
-document.getElementById('authForm').addEventListener('submit',e=>{
-  e.preventDefault();const email=document.getElementById('authEmail').value.trim().toLowerCase();
-  const password=document.getElementById('authPassword').value;
-  const name=document.getElementById('authName').value.trim();
-  const users=JSON.parse(localStorage.getItem('rubiUsers')||'{}');
-  const error=document.getElementById('authError');
-  if(authMode==='register'){
-    if(name.length<2){error.textContent='Escribe tu nombre para personalizar tu experiencia.';return}
-    if(users[email]){error.textContent='Ya existe una cuenta con ese email. Inicia sesión.';return}
-    users[email]={name,password};localStorage.setItem('rubiUsers',JSON.stringify(users));
-    const user={name,email};localStorage.setItem('rubiSession',JSON.stringify(user));showApp(user);
-    toast('¡Bienvenido/a a RUBÍ, '+name.split(/\\s+/)[0]+'! 🎉');
-  }else{
-    const found=users[email];
-    if(!found||found.password!==password){error.textContent='Email o contraseña incorrectos. Si es tu primera vez, crea una cuenta.';return}
-    const user={name:found.name,email};localStorage.setItem('rubiSession',JSON.stringify(user));showApp(user);
-    toast('¡Hola, '+found.name.split(/\\s+/)[0]+'! 👋');
+document.getElementById("authForm").addEventListener("submit",async e=>{
+ e.preventDefault();const email=document.getElementById("authEmail").value.trim().toLowerCase(),password=document.getElementById("authPassword").value,name=document.getElementById("authName").value.trim(),error=document.getElementById("authError"),submit=document.getElementById("authSubmit"),original=submit.textContent;
+ error.textContent="";submit.disabled=true;submit.textContent="Conectando…";
+ try{
+  const sb=await getRubiClient();
+  if(authMode==="reset"){
+   if(password.length<6)throw new Error("La contraseña debe tener al menos 6 caracteres.");
+   const {error:err}=await sb.auth.updateUser({password});if(err)throw err;
+   toast("Contraseña actualizada");setAuthMode("login");return;
   }
+  if(authMode==="register"){
+   if(name.length<2)throw new Error("Escribe tu nombre para personalizar tu experiencia.");
+   const {data,error:err}=await sb.auth.signUp({email,password,options:{data:{display_name:name}}});if(err)throw err;
+   if(data.user){const {error:pe}=await sb.from("profiles").upsert({id:data.user.id,display_name:name},{onConflict:"id"});if(pe)console.warn("Profile sync warning:",pe)}
+   if(data.session){localStorage.setItem("rubiSession",JSON.stringify({name,email,userId:data.user.id}));showApp({name,email});toast("¡Bienvenido/a a RUBÍ, "+name.split(/\s+/)[0]+"!")}
+   else{error.textContent="Cuenta creada. Revisa tu email para confirmar el registro y después inicia sesión.";setAuthMode("login")}
+   return;
+  }
+  const {data,error:err}=await sb.auth.signInWithPassword({email,password});if(err)throw err;
+  const user=data.user,display=user.user_metadata?.display_name||user.user_metadata?.name||user.email||"Atleta";
+  await sb.from("profiles").upsert({id:user.id,display_name:display},{onConflict:"id"});
+  localStorage.setItem("rubiSession",JSON.stringify({name:display,email:user.email,userId:user.id}));
+  showApp({name:display,email:user.email});toast("¡Hola, "+display.split(/\s+/)[0]+"!");
+ }catch(err){error.textContent=err.message||"No se pudo completar la operación. Revisa tus datos e inténtalo de nuevo."}
+ finally{submit.disabled=false;submit.textContent=authMode==="register"?"Crear mi cuenta →":authMode==="reset"?"Actualizar contraseña →":"Entrar a mi espacio →"}
 });
-(function initAuth(){
- const user=JSON.parse(localStorage.getItem('rubiSession')||'null');
- if(user)showApp(user);else{document.getElementById('authScreen').classList.add('show');setAuthMode('login')}
+(async function initAuth(){
+ try{
+  const sb=await getRubiClient();const {data:{session},error}=await sb.auth.getSession();if(error)throw error;
+  if(session?.user){const user=session.user,name=user.user_metadata?.display_name||user.user_metadata?.name||user.email||"Atleta";localStorage.setItem("rubiSession",JSON.stringify({name,email:user.email,userId:user.id}));showApp({name,email:user.email})}
+  else{document.getElementById("authScreen").classList.add("show");setAuthMode("login")}
+  sb.auth.onAuthStateChange((event,session)=>{
+   if(event==="PASSWORD_RECOVERY"){document.getElementById("authScreen").classList.add("show");setAuthMode("reset")}
+   if(event==="SIGNED_OUT"){localStorage.removeItem("rubiSession")}
+  });
+ }catch(err){console.warn("Auth init error:",err);document.getElementById("authScreen").classList.add("show");setAuthMode("login");document.getElementById("authError").textContent="Servicio de acceso no disponible. Comprueba tu conexión e inténtalo de nuevo."}
 })();
-
 // RUBÍ exercise library: static MIT dataset + wger public REST API.
 // Media are only displayed when the relevant wger media record includes usable license/author metadata.
 const EXERCISES_DATA_URL = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/data/exercises.json";
